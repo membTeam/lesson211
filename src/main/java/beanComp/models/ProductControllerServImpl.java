@@ -5,48 +5,92 @@ import beanComp.repository.ProductRepository;
 import beanComp.web.ProductControllerServ;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 public class ProductControllerServImpl implements ProductControllerServ {
     private ProductRepository repo;
     private HashMap<Integer, List<Order>> mapOrder = new HashMap<>();
+
     public ProductControllerServImpl(ProductRepository repo) {
         this.repo = repo;
+    }
+
+    private void verifyBalance(List<Order> lsOrder) {
+
+        lsOrder.stream().forEach(order -> {
+
+            var product = repo.findById(order.getProductId())
+                    .orElseThrow(() -> {
+                        throw new NoData("Нет данных по продукту");
+                    });
+
+            var countFromRepo = product.getCurrBalance();
+
+            var countFromMapOrder = allAmountFromMapOrder(product.getId());
+            var balance = countFromRepo - countFromMapOrder - order.getAmount();
+
+            if (balance < 0) {
+                var endProduct = countFromRepo - countFromMapOrder;
+                var mes = endProduct == 0
+                        ? " нет в наличии"
+                        : " в наличии только " + endProduct + "шт.";
+
+                throw new NoData(product.getDescr() + mes);
+            }
+
+        });
+    }
+
+    private int allAmountFromMapOrder(Integer productId) {
+        var anonimusObj = new Object() {
+            int countFromMapOrder = 0;
+        };
+
+        mapOrder.entrySet().stream().forEach((data) -> {
+            anonimusObj.countFromMapOrder += data.getValue()
+                    .stream()
+                    .filter(order -> order.getProductId() == productId)
+                    .map(order -> order.getAmount())
+                    .mapToInt(Integer::intValue)
+                    .sum();
+        });
+
+        return anonimusObj.countFromMapOrder;
     }
 
     @Override
     public String AddOrder(OrderRequest orderRequest) {
 
-        Integer key = orderRequest.getKey();
+        final Integer ORDERKEY = orderRequest.getKey();
 
-        if (!mapOrder.containsKey(key)) {
-            throw new NoData("key не найден");
+        if (!mapOrder.containsKey(ORDERKEY)) {
+            throw new NoData("KEY заказа не найден");
         }
 
-        var lsOrderOld = mapOrder.get(key);
-        var newLs = orderRequest.getListOrder()
+        final var lsOrderFromMapOrder = mapOrder.get(ORDERKEY);
+        final var lsOrderFromRequest = orderRequest.getListOrder()
                 .stream()
-                .map((val) -> {
-                    var product = repo.findById(val.getProductId())
-                            .orElseThrow(()->{ throw new NoData("Нет данных по продукту");
-                    });
+                .map(order -> {
+                    var product = repo.findById(order.getProductId())
+                            .orElseThrow(() -> {
+                                throw new NoData("Нет данных по продукту");
+                            });
 
-                    val.setDescr(product.getDescr());
+                    order.setDescr(product.getDescr());
 
-                    return val;
+                    return order;
                 })
                 .collect(Collectors.toList());
 
-        lsOrderOld.addAll(newLs);
+        verifyBalance(orderRequest.getListOrder());
 
-        mapOrder.replace(key, lsOrderOld);
+        lsOrderFromMapOrder.addAll(lsOrderFromRequest);
 
-        return "Заказ добавлен";
+        mapOrder.replace(ORDERKEY, lsOrderFromMapOrder);
+
+        return "order added";
     }
 
     @Override
