@@ -8,6 +8,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class Order {
     private int productId;
-    private int amount;
+    private Integer amount;
     private String descr;
 }

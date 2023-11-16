@@ -1,16 +1,14 @@
 package beanComp.web;
 
+import beanComp.exeption.NoData;
 import beanComp.models.CartOrders;
 import beanComp.models.Order;
+import beanComp.repository.ProductRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
-
-import beanComp.exeption.NoData;
-import beanComp.repository.ProductRepository;
-import beanComp.web.ProductControllerServ;
 
 @Component
 @AllArgsConstructor
@@ -23,21 +21,27 @@ public class ProductControllerServImpl implements ProductControllerServ {
 
         lsOrder.stream().forEach(order -> {
 
+            if (order.getAmount() == null || order.getAmount() == 0) {
+                throw new NoData("Нет данных по количеству продукции");
+            }
+
             var product = repo.findById(order.getProductId())
                     .orElseThrow(() -> {
                         throw new NoData("Нет данных по продукту");
                     });
 
             var countFromRepo = product.getCurrBalance();
-
-            var countFromCartOrders = cartOrders.amountFromCartOrders(order.getProductId()) ;
-            var balance = countFromRepo - countFromCartOrders - order.getAmount();
+            var balance = countFromRepo - order.getAmount();
 
             if (balance < 0) {
-                var endProduct = countFromRepo - countFromCartOrders;
-                var mes = endProduct == 0
+
+                if (countFromRepo == 0) {
+                    balance = 0;
+                }
+
+                var mes = balance == 0
                         ? " нет в наличии"
-                        : " в наличии только " + endProduct + "шт.";
+                        : " в наличии только " + countFromRepo + " шт.";
 
                 throw new NoData(product.getDescr() + mes);
             }
