@@ -1,9 +1,10 @@
 package beanComp.config;
 
-import beanComp.models.Product;
 import beanComp.repository.ProductRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
+import beanComp.models.Product;
 
 @Component
 public class ConfigLoadData implements CommandLineRunner {

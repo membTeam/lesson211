@@ -1,15 +1,12 @@
 package beanComp.web;
 
 import beanComp.models.Order;
-import beanComp.models.OrderRequest;
 
 import java.util.List;
 
 public interface ProductControllerServ {
 
-    String AddOrder(OrderRequest orderExt);
+    String AddOrder(List<Order> lsOrder);
 
-    Integer getKeyAuthorisation();
-
-    List<Order> GetOrder(Integer key);
+    List<Order> GetOrder();
 }
