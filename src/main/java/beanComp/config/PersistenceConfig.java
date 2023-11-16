@@ -1,10 +1,11 @@
 package beanComp.config;
 
-import beanComp.models.Product;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.relational.core.mapping.event.BeforeSaveEvent;
+
+import beanComp.models.Product;
 
 @Configuration
 public class PersistenceConfig {
